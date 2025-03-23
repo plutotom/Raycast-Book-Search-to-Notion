@@ -14,7 +14,7 @@
     {
       "name": "search-book",
       "title": "Search book",
-      "description": "Search boosk to add to notion",
+      "description": "Search books to add to notion",
       "mode": "view"
     }
   ],
@@ -25,9 +25,26 @@
       "description": "Use AI to search for a book and add it's details to notion rather then you looking your self."
     }
   ],
+  "preferences": [
+    {
+      "name": "notionApiKey",
+      "title": "Notion API Key",
+      "description": "Your Notion integration secret token",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "notionDatabaseId",
+      "title": "Notion Database ID",
+      "description": "The ID of your Notion book database",
+      "type": "textfield",
+      "required": true
+    }
+  ],
   "dependencies": {
     "@raycast/api": "^1.93.2",
-    "@raycast/utils": "^1.17.0"
+    "@raycast/utils": "^1.17.0",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.11",

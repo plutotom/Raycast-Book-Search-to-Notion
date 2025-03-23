@@ -6,10 +6,12 @@ type Input = {
 };
 
 export default async function (input: Input) {
+  console.log("input", input);
   // Your tool code here
 }
 
 export const confirmation: Tool.Confirmation<Input> = async (input) => {
+  console.log("input", input);
   return {
     title: "Run Tool",
   };
