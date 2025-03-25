@@ -55,7 +55,7 @@ export default function Command() {
                   <List.Item.Detail.Metadata>
                     <List.Item.Detail.Metadata.Link
                       title="Image Url"
-                      target={book.previewLink}
+                      target={book.previewLink || ""}
                       text="Open in Browser"
                     />
                     <List.Item.Detail.Metadata.Label title="Title" text={book.title} />
@@ -87,8 +87,8 @@ function BookActions({ book }: { book: Book }) {
       <Action.Push title="View Book Details" icon={Icon.Eye} target={<BookDetail book={book} />} />
       <Action title="Add to Notion" icon={Icon.Plus} onAction={() => addToNotion(book)} />
 
-      <Action.CopyToClipboard title="Copy ISBN-13" content={book.isbn13} />
-      <Action.OpenInBrowser url={book.previewLink} />
+      <Action.CopyToClipboard title="Copy ISBN-13" content={book.isbn13 || ""} />
+      <Action.OpenInBrowser url={book.previewLink || ""} />
     </ActionPanel>
   );
 }
@@ -139,8 +139,8 @@ function BookDetailActions({ book }: { book: Book }) {
   return (
     <ActionPanel>
       <Action title="Add to Notion" icon={Icon.Plus} onAction={() => addToNotion(book)} />
-      <Action.CopyToClipboard title="Copy ISBN-13" content={book.isbn13} />
-      <Action.OpenInBrowser url={book.previewLink} />
+      <Action.CopyToClipboard title="Copy ISBN-13" content={book.isbn13 || ""} />
+      <Action.OpenInBrowser url={book.previewLink || ""} />
     </ActionPanel>
   );
 }
