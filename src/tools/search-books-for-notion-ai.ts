@@ -1,8 +1,9 @@
 import { Tool } from "@raycast/api";
-import { getPreferenceValues } from "@raycast/api";
-import { useGoogleBooksApi } from "../apis/base_api.ts";
+
+import { createGoogleBooksApi } from "../api/google-books.api";
+import { getGoogleBooksSettings } from "../config/preferences";
 import { Book } from "../models/book.model";
-import { addBookToNotion } from "../utils/notion";
+import { addBookToNotion, buildSuccessMessage } from "../services/notion/notion.service";
 
 /**
  * Input type for the book search tool
@@ -18,14 +19,7 @@ type SearchBookInput = {
  * Confirmation for adding a book to Notion
  */
 export const confirmation: Tool.Confirmation<SearchBookInput> = async (input) => {
-  // First search for the book to show details in confirmation
-  const api = useGoogleBooksApi({
-    localePreference: "en",
-    enableCoverImageEdgeCurl: true,
-    apiKey: getPreferenceValues().googleBooksApiKey || undefined,
-  });
-
-  const books = (await api.getByQuery(input.query)) as Book[];
+  const books = await searchBooks(input.query);
 
   if (!books || books.length === 0) {
     return {
@@ -55,14 +49,7 @@ ${bestMatch.description ? "Description: " + bestMatch.description.substring(0, 2
  */
 export default async function searchBookForNotion(input: SearchBookInput): Promise<string> {
   try {
-    const api = useGoogleBooksApi({
-      localePreference: "en",
-      enableCoverImageEdgeCurl: true,
-      apiKey: getPreferenceValues().googleBooksApiKey || undefined,
-    });
-
-    // Search for books
-    const books = (await api.getByQuery(input.query)) as Book[];
+    const books = await searchBooks(input.query);
 
     if (!books || books.length === 0) {
       return "I couldn't find any books matching your query. Could you try again with a different search term?";
@@ -72,15 +59,23 @@ export default async function searchBookForNotion(input: SearchBookInput): Promi
     const bestMatch = books[0];
 
     // Add book to Notion
-    const notionResponse = await addBookToNotion(bestMatch);
+    const result = await addBookToNotion(bestMatch);
 
-    if (notionResponse) {
-      return `✅ Successfully added "${bestMatch.title}" by ${bestMatch.authors?.join(", ")} to your Notion database!`;
-    } else {
-      return "❌ Failed to add the book to Notion. Please check your Notion API key and database ID settings.";
+    if (result?.response) {
+      return `✅ Successfully added "${bestMatch.title}" by ${bestMatch.authors?.join(", ")} to your Notion database!\n${buildSuccessMessage(result)}`;
     }
+
+    return "❌ Failed to add the book to Notion. Please check your Notion API key and database ID settings.";
   } catch (error) {
     console.error("Error in searchBookForNotion:", error);
     return "Sorry, I encountered an error while processing your book request. Please check your settings and try again.";
   }
+}
+
+async function searchBooks(query: string): Promise<Book[]> {
+  if (!query) {
+    return [];
+  }
+  const api = createGoogleBooksApi(getGoogleBooksSettings());
+  return (await api.getByQuery(query)) as Book[];
 }
