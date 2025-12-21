@@ -32,8 +32,10 @@ export class NotionClient {
       let message = `Notion API error (${response.status})`;
 
       try {
-        const errorData = await response.json();
-        message = `${message}: ${errorData.message || "Unknown error"}`;
+        const errorData = (await response.json()) as unknown;
+        if (isErrorResponse(errorData)) {
+          message = `${message}: ${errorData.message ?? "Unknown error"}`;
+        }
       } catch {
         // ignore parse failures
       }
@@ -43,4 +45,8 @@ export class NotionClient {
 
     return (await response.json()) as T;
   }
+}
+
+function isErrorResponse(payload: unknown): payload is { message?: string } {
+  return typeof payload === "object" && payload !== null && "message" in payload;
 }

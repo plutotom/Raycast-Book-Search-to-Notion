@@ -1,6 +1,6 @@
 import { showToast, Toast } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { Book } from "../models/book.model";
 import { createGoogleBooksApi } from "../api/google-books.api";
@@ -10,8 +10,8 @@ export function useBookSearch(query: string) {
   const settings = useMemo(() => getGoogleBooksSettings(), []);
   const api = useMemo(() => createGoogleBooksApi(settings), [settings]);
 
-  const { data, isLoading } = usePromise<Book[]>(
-    async (searchTerm: string) => {
+  const fetchBooks = useCallback(
+    async (searchTerm: string): Promise<Book[]> => {
       if (!searchTerm) {
         return [];
       }
@@ -24,8 +24,10 @@ export function useBookSearch(query: string) {
         return [];
       }
     },
-    [query, api],
+    [api],
   );
+
+  const { data, isLoading } = usePromise(fetchBooks, [query]);
 
   return { books: data ?? [], isLoading };
 }
