@@ -2,6 +2,42 @@ import { Book } from "../../models/book.model";
 import { NotionConfig } from "../../config/preferences";
 import { NotionPropertyMapping, NotionRequestPayload } from "./notion.types";
 
+// Notion API limits rich_text content to 2000 characters per block
+const NOTION_TEXT_LIMIT = 2000;
+
+/**
+ * Splits text into chunks that fit within Notion's character limit
+ */
+function splitTextIntoChunks(text: string, maxLength: number = NOTION_TEXT_LIMIT): string[] {
+  if (!text || text.length <= maxLength) {
+    return [text || "No description available."];
+  }
+
+  const chunks: string[] = [];
+  let remaining = text;
+
+  while (remaining.length > 0) {
+    if (remaining.length <= maxLength) {
+      chunks.push(remaining);
+      break;
+    }
+
+    // Find a good break point (end of sentence or word)
+    let breakPoint = remaining.lastIndexOf(". ", maxLength);
+    if (breakPoint === -1 || breakPoint < maxLength * 0.5) {
+      breakPoint = remaining.lastIndexOf(" ", maxLength);
+    }
+    if (breakPoint === -1 || breakPoint < maxLength * 0.5) {
+      breakPoint = maxLength;
+    }
+
+    chunks.push(remaining.slice(0, breakPoint + 1).trim());
+    remaining = remaining.slice(breakPoint + 1).trim();
+  }
+
+  return chunks;
+}
+
 interface BuildPayloadOptions {
   book: Book;
   config: NotionConfig;
@@ -64,23 +100,25 @@ export function buildNotionPayload({ book, config, propertyMapping }: BuildPaylo
     select: { name: "Not started" },
   });
 
+  // Split description into chunks to comply with Notion's 2000 char limit per rich_text block
+  const descriptionChunks = splitTextIntoChunks(book.description || "");
+  const children = descriptionChunks.map((chunk) => ({
+    object: "block" as const,
+    type: "paragraph" as const,
+    paragraph: {
+      rich_text: [
+        {
+          type: "text" as const,
+          text: { content: chunk },
+        },
+      ],
+    },
+  }));
+
   const payload: NotionRequestPayload = {
     parent: { database_id: config.databaseId },
     properties,
-    children: [
-      {
-        object: "block",
-        type: "paragraph",
-        paragraph: {
-          rich_text: [
-            {
-              type: "text",
-              text: { content: book.description || "No description available." },
-            },
-          ],
-        },
-      },
-    ],
+    children,
   };
 
   if (coverUrl.startsWith("https://")) {
