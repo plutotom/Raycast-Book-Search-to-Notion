@@ -20,7 +20,13 @@ export function useBookSearch(query: string) {
         return await api.getByQuery(searchTerm);
       } catch (error) {
         console.error(error);
-        await showToast(Toast.Style.Failure, "Failed to search for books");
+        const message = error instanceof Error ? error.message : String(error);
+        const isQuotaExceeded = message.includes("429") || message.toLowerCase().includes("quota exceeded");
+        await showToast(
+          Toast.Style.Failure,
+          isQuotaExceeded ? "Google Books daily quota exceeded" : "Failed to search for books",
+          isQuotaExceeded ? "Add a Google Books API key in extension preferences, or try again tomorrow." : message,
+        );
         return [];
       }
     },
